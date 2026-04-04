@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output (rebuilt on install/publish)
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Dev-only files (not part of the npm package)
+backlog/
+*.png
+tests/
+playwright.config.ts
+.mcp.json
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# pnpm lock (monorepo-specific, not needed for published package)
+# Uncomment if you want to track it:
+# pnpm-lock.yaml
