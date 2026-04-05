@@ -90,14 +90,32 @@ interface FlowState {
   deleteSelectedNodes: () => void;
 }
 
-function testCaseToNodesEdges(tc: TestCase): { nodes: Node[]; edges: Edge[] } {
-  return {
-    nodes: tc.nodes.map((n) => ({
+// Layout constants for horizontal wrapping flow
+const NODE_WIDTH = 280;
+const NODE_HEIGHT = 100;
+const H_GAP = 40;   // horizontal gap between nodes
+const V_GAP = 80;   // vertical gap between rows
+const NODES_PER_ROW = 5; // wrap after this many nodes
+
+function layoutNodesHorizontally(nodes: ActionNode[]): Node[] {
+  return nodes.map((n, i) => {
+    const col = i % NODES_PER_ROW;
+    const row = Math.floor(i / NODES_PER_ROW);
+    return {
       id: n.id,
       type: n.type,
-      position: n.position,
+      position: {
+        x: col * (NODE_WIDTH + H_GAP),
+        y: row * (NODE_HEIGHT + V_GAP),
+      },
       data: { ...n.data, ...(n.frameLocators ? { frameLocators: n.frameLocators } : {}) } as unknown as Record<string, unknown>,
-    })),
+    };
+  });
+}
+
+function testCaseToNodesEdges(tc: TestCase): { nodes: Node[]; edges: Edge[] } {
+  return {
+    nodes: layoutNodesHorizontally(tc.nodes),
     edges: tc.edges.map((e) => ({
       id: e.id,
       source: e.source,
@@ -140,34 +158,37 @@ function testCaseWithHooks(
   if (flow.beforeAll && flow.beforeAll.length > 0) sections.push({ hookName: 'beforeAll', actions: flow.beforeAll });
   if (flow.beforeEach && flow.beforeEach.length > 0) sections.push({ hookName: 'beforeEach', actions: flow.beforeEach });
 
-  // Build result
+  // Build result — horizontal wrapping layout
   const allNodes: Node[] = [];
   const allEdges: Edge[] = [];
-  let yOffset = 0;
-  const X = 250;
+  let nodeIndex = 0; // global counter for positioning across all sections
 
   function appendLabel(hookName: string) {
+    const col = nodeIndex % NODES_PER_ROW;
+    const row = Math.floor(nodeIndex / NODES_PER_ROW);
     const id = `hookLabel_${hookName}_${Date.now()}`;
     allNodes.push({
       id,
       type: 'hookLabel',
-      position: { x: X, y: yOffset },
+      position: { x: col * (NODE_WIDTH + H_GAP), y: row * (NODE_HEIGHT + V_GAP) },
       data: { hookName } as unknown as Record<string, unknown>,
     });
-    yOffset += 80;
+    nodeIndex++;
     return id;
   }
 
   function appendActions(actions: ActionNode[], isReadOnly: boolean) {
     for (const n of actions) {
+      const col = nodeIndex % NODES_PER_ROW;
+      const row = Math.floor(nodeIndex / NODES_PER_ROW);
       const nodeId = isReadOnly ? `hook_${n.id}` : n.id;
       allNodes.push({
         id: nodeId,
         type: n.type,
-        position: { x: X, y: yOffset },
+        position: { x: col * (NODE_WIDTH + H_GAP), y: row * (NODE_HEIGHT + V_GAP) },
         data: { ...n.data, ...(isReadOnly ? { _hookReadOnly: true } : {}) } as unknown as Record<string, unknown>,
       });
-      yOffset += 150;
+      nodeIndex++;
     }
   }
 
@@ -198,20 +219,18 @@ function testCaseWithHooks(
     // Connect last hook node to next section's first node (will be linked below)
   }
 
-  // Test case nodes
-  const testStartY = yOffset;
+  // Test case nodes — continue the horizontal layout from current nodeIndex
   const tcResult = testCaseToNodesEdges(tc);
-  // Reposition test nodes relative to current yOffset
   for (const n of tcResult.nodes) {
+    const col = nodeIndex % NODES_PER_ROW;
+    const row = Math.floor(nodeIndex / NODES_PER_ROW);
     allNodes.push({
       ...n,
-      position: { x: n.position.x, y: n.position.y + testStartY },
+      position: { x: col * (NODE_WIDTH + H_GAP), y: row * (NODE_HEIGHT + V_GAP) },
     });
+    nodeIndex++;
   }
   allEdges.push(...tcResult.edges);
-  if (tcResult.nodes.length > 0) {
-    yOffset = tcResult.nodes[tcResult.nodes.length - 1].position.y + testStartY + 150;
-  }
 
   // Connect last before-hook node to first test node
   if (allNodes.length > tcResult.nodes.length && tcResult.nodes.length > 0) {
@@ -268,12 +287,16 @@ function testCaseWithHooks(
 }
 
 function hookNodesToNodesEdges(hookNodes: ActionNode[]): { nodes: Node[]; edges: Edge[] } {
-  const nodes: Node[] = hookNodes.map((n, i) => ({
-    id: n.id,
-    type: n.type,
-    position: n.position ?? { x: 250, y: i * 150 },
-    data: n.data as unknown as Record<string, unknown>,
-  }));
+  const nodes: Node[] = hookNodes.map((n, i) => {
+    const col = i % NODES_PER_ROW;
+    const row = Math.floor(i / NODES_PER_ROW);
+    return {
+      id: n.id,
+      type: n.type,
+      position: { x: col * (NODE_WIDTH + H_GAP), y: row * (NODE_HEIGHT + V_GAP) },
+      data: n.data as unknown as Record<string, unknown>,
+    };
+  });
   const edges: Edge[] = [];
   for (let i = 0; i < nodes.length - 1; i++) {
     edges.push({
@@ -459,11 +482,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   addNode: (type, data) => {
     const id = nextId();
     const { nodes } = get();
-    const maxY = nodes.reduce((max, n) => Math.max(max, n.position.y), 0);
+    const nextIndex = nodes.length;
+    const col = nextIndex % NODES_PER_ROW;
+    const row = Math.floor(nextIndex / NODES_PER_ROW);
     const newNode: Node = {
       id,
       type,
-      position: { x: 250, y: maxY + 150 },
+      position: { x: col * (NODE_WIDTH + H_GAP), y: row * (NODE_HEIGHT + V_GAP) },
       data: data as unknown as Record<string, unknown>,
     };
 
@@ -683,10 +708,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       const [moved] = newNodes.splice(fromIndex, 1);
       newNodes.splice(toIndex, 0, moved);
 
-      // Reassign positions based on new order
+      // Reassign positions based on new order (horizontal wrapping)
       const repositioned = newNodes.map((n, i) => ({
         ...n,
-        position: { x: n.position.x, y: i * 150 },
+        position: {
+          x: (i % NODES_PER_ROW) * (NODE_WIDTH + H_GAP),
+          y: Math.floor(i / NODES_PER_ROW) * (NODE_HEIGHT + V_GAP),
+        },
       }));
 
       // Rebuild edges as a linear chain
