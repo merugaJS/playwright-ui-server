@@ -1,6 +1,6 @@
 {
   "name": "playwright-ui-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
   "description": "Visual Playwright test automation builder — see your Playwright tests as interactive flowcharts. Install in any Playwright project and run `npx playwright-ui-server` to launch the UI.",
