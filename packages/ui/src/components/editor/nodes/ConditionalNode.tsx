@@ -19,7 +19,7 @@ export const ConditionalNode = memo(function ConditionalNode({ data, selected }:
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-zinc-500" />
       <div
         className={`bg-zinc-900/80 rounded-lg shadow-lg min-w-[260px] max-w-[360px] border-2 border-dashed ${
           selected ? 'border-amber-400 ring-1 ring-amber-400/50' : 'border-amber-600/50'
@@ -102,7 +102,7 @@ export const ConditionalNode = memo(function ConditionalNode({ data, selected }:
           </div>
         )}
       </div>
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-zinc-500" />
     </>
   );
 });

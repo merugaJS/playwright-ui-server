@@ -659,11 +659,11 @@ export const HookLabelNode = memo(function HookLabelNode({ data }: ActionNodePro
   const colors = colorMap[hookName] ?? 'border-zinc-600 bg-zinc-800 text-zinc-400';
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-zinc-500" />
       <div className={`px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider ${colors}`}>
         {hookName}
       </div>
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-zinc-500" />
     </>
   );
 }, areNodePropsEqual);

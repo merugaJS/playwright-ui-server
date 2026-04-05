@@ -284,10 +284,10 @@ export function FlowEditor() {
             onPaneClick={onPaneClick}
             onSelectionChange={onSelectionChange}
             defaultEdgeOptions={defaultEdgeOptions}
-            selectionOnDrag
+            selectionOnDrag={false}
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode="Shift"
-            panOnDrag={[1, 2]}
+            panOnDrag
             fitView
             fitViewOptions={PERF_FIT_VIEW_OPTIONS}
             minZoom={0.1}

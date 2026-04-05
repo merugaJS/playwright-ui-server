@@ -23,7 +23,7 @@ export const BaseNode = memo(function BaseNode({ category, icon, label, children
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-zinc-500" />
       <div
         className={`bg-zinc-800 rounded-lg shadow-lg min-w-[220px] max-w-[300px] border ${
           selected ? 'border-blue-500 ring-1 ring-blue-500/50' : 'border-zinc-700'
@@ -42,7 +42,7 @@ export const BaseNode = memo(function BaseNode({ category, icon, label, children
           {children}
         </div>
       </div>
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-zinc-500" />
     </>
   );
 });

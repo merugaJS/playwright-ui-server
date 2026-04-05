@@ -43,7 +43,7 @@ export const LoopNode = memo(function LoopNode({ data, selected }: LoopNodeProps
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="target" position={Position.Left} className="!w-2 !h-2 !bg-zinc-500" />
       <div
         className={`bg-zinc-900/80 rounded-lg shadow-lg min-w-[260px] max-w-[340px] border-2 border-dashed ${
           selected ? 'border-cyan-400 ring-1 ring-cyan-400/50' : 'border-cyan-600/50'
@@ -86,7 +86,7 @@ export const LoopNode = memo(function LoopNode({ data, selected }: LoopNodeProps
           )}
         </div>
       </div>
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-zinc-500" />
+      <Handle type="source" position={Position.Right} className="!w-2 !h-2 !bg-zinc-500" />
     </>
   );
 });

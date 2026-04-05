@@ -116,7 +116,7 @@ export const CompactNode = memo(function CompactNode({ type, selected }: Compact
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !bg-zinc-500" />
+      <Handle type="target" position={Position.Left} className="!w-1.5 !h-1.5 !bg-zinc-500" />
       <div
         className={`rounded px-2 py-1 text-[10px] font-semibold text-zinc-300 ${
           selected ? 'ring-1 ring-blue-500/50' : ''
@@ -130,7 +130,7 @@ export const CompactNode = memo(function CompactNode({ type, selected }: Compact
       >
         {label}
       </div>
-      <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !bg-zinc-500" />
+      <Handle type="source" position={Position.Right} className="!w-1.5 !h-1.5 !bg-zinc-500" />
     </>
   );
 });
@@ -145,7 +145,7 @@ export const MinimalNode = memo(function MinimalNode({ type, selected }: Compact
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!w-1 !h-1 !bg-zinc-600" />
+      <Handle type="target" position={Position.Left} className="!w-1 !h-1 !bg-zinc-600" />
       <div
         className={`rounded-full ${selected ? 'ring-1 ring-blue-400' : ''}`}
         style={{
@@ -155,7 +155,7 @@ export const MinimalNode = memo(function MinimalNode({ type, selected }: Compact
           opacity: 0.8,
         }}
       />
-      <Handle type="source" position={Position.Bottom} className="!w-1 !h-1 !bg-zinc-600" />
+      <Handle type="source" position={Position.Right} className="!w-1 !h-1 !bg-zinc-600" />
     </>
   );
 });
