@@ -23,6 +23,17 @@ export function createApp(projectInfo: ProjectInfo): express.Express {
 
   app.use(express.json());
 
+  // CORS headers
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   // Initialize run history service
   const runHistoryService = new RunHistoryService(projectInfo.rootDir);
   setRunHistoryService(runHistoryService);
@@ -38,6 +49,16 @@ export function createApp(projectInfo: ProjectInfo): express.Express {
   app.use('/api/artifacts', createArtifactsRouter(projectInfo));
   app.use('/api/env', createEnvRouter(projectInfo));
   app.use('/api/coverage', createCoverageRouter(projectInfo));
+
+  // Health check endpoint
+  app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', version: '0.1.0' });
+  });
+
+  // Catch-all for unknown API routes
+  app.all('/api/*', (_req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
 
   // Serve the UI static files
   // When bundled for npm: dist/server.mjs → dist/ui/

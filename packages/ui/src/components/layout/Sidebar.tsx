@@ -11,16 +11,24 @@ import { FileTree } from '../sidebar/FileTree.js';
 function SectionHeader({
   label,
   count,
+  filteredCount,
   collapsed,
   onToggle,
   actions,
 }: {
   label: string;
   count?: number;
+  filteredCount?: number;
   collapsed: boolean;
   onToggle: () => void;
   actions?: React.ReactNode;
 }) {
+  const badgeText = count !== undefined && count > 0
+    ? (filteredCount !== undefined && filteredCount !== count
+      ? `${filteredCount} of ${count}`
+      : `${count}`)
+    : null;
+
   return (
     <h2 className="text-zinc-300 text-xs font-semibold uppercase tracking-wider flex items-center justify-between">
       <button
@@ -33,9 +41,9 @@ function SectionHeader({
         <span>{label}</span>
       </button>
       <div className="flex items-center gap-1">
-        {count !== undefined && count > 0 && (
+        {badgeText && (
           <span className="bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded text-xs font-normal">
-            {count}
+            {badgeText}
           </span>
         )}
         {actions}
@@ -122,6 +130,7 @@ export function Sidebar() {
           <SectionHeader
             label="Tests"
             count={tests?.total}
+            filteredCount={testFilter.trim() ? filteredFiles.length : undefined}
             collapsed={testsCollapsed}
             onToggle={() => setTestsCollapsed(!testsCollapsed)}
             actions={

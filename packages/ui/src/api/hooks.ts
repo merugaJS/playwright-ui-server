@@ -204,6 +204,9 @@ export interface ActionData {
   harFilePath?: string;
   mode?: string;
   notFound?: string;
+  // Hook label fields
+  hookName?: string;
+  _hookReadOnly?: boolean;
 }
 
 export interface ActionNode {

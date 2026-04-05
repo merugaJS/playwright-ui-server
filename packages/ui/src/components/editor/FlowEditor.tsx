@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -27,6 +27,34 @@ import { COMPACT_ZOOM_THRESHOLD, MINIMAL_ZOOM_THRESHOLD, type LodMode } from '..
  * These are tuned for flows with 100-200+ nodes.
  */
 const PERF_FIT_VIEW_OPTIONS = { padding: 0.3 } as const;
+
+/**
+ * Inner component that auto-fits the viewport whenever nodes are loaded or
+ * change significantly (e.g. a different test file is selected).
+ * Tracks the set of node IDs so that merely dragging a node doesn't re-trigger.
+ */
+function AutoFitView({ nodes }: { nodes: Node[] }) {
+  const reactFlowInstance = useReactFlow();
+  const prevNodeKeyRef = useRef<string>('');
+
+  useEffect(() => {
+    if (nodes.length === 0) return;
+
+    // Build a stable key from sorted node IDs so we only re-fit when the
+    // set of nodes actually changes, not on every position tweak.
+    const nodeKey = nodes.map((n) => n.id).sort().join(',');
+    if (nodeKey === prevNodeKeyRef.current) return;
+    prevNodeKeyRef.current = nodeKey;
+
+    // Small delay lets React Flow finish measuring node dimensions.
+    const timer = setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 200 });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [nodes, reactFlowInstance]);
+
+  return null;
+}
 
 /**
  * Inner component that auto-pans to the current search match.
@@ -279,6 +307,7 @@ export function FlowEditor() {
               pannable
               zoomable
             />
+            <AutoFitView nodes={styledNodes} />
             <SearchPanner
               currentMatchNodeId={search.currentMatchNodeId}
               nodes={nodes}

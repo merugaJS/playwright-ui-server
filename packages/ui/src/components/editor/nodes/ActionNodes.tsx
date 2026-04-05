@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { BaseNode } from './BaseNode.js';
 import { LoopNode } from './LoopNode.js';
 import { ConditionalNode } from './ConditionalNode.js';
@@ -647,6 +648,26 @@ export const HarRouteNode = memo(function HarRouteNode({ data, selected }: Actio
   );
 }, areNodePropsEqual);
 
+export const HookLabelNode = memo(function HookLabelNode({ data }: ActionNodeProps) {
+  const hookName = data.hookName ?? 'Hook';
+  const colorMap: Record<string, string> = {
+    beforeAll: 'border-purple-600/50 bg-purple-900/30 text-purple-400',
+    beforeEach: 'border-amber-600/50 bg-amber-900/30 text-amber-400',
+    afterEach: 'border-amber-600/50 bg-amber-900/30 text-amber-400',
+    afterAll: 'border-purple-600/50 bg-purple-900/30 text-purple-400',
+  };
+  const colors = colorMap[hookName] ?? 'border-zinc-600 bg-zinc-800 text-zinc-400';
+  return (
+    <>
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-zinc-500" />
+      <div className={`px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider ${colors}`}>
+        {hookName}
+      </div>
+      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-zinc-500" />
+    </>
+  );
+}, areNodePropsEqual);
+
 /**
  * Full-detail node types (no LOD wrapping).
  * Useful for contexts where LOD is not needed.
@@ -695,6 +716,7 @@ export const fullNodeTypes = {
   switch: SwitchNode,
   inlineData: InlineDataNode,
   harRoute: HarRouteNode,
+  hookLabel: HookLabelNode,
 };
 
 /**

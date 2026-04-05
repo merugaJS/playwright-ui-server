@@ -28,8 +28,15 @@ export function parseCli(argv: string[]): CliOptions {
     .parse(argv);
 
   const opts = program.opts();
+  const port = parseInt(opts.port, 10);
+
+  if (isNaN(port) || port < 1 || port > 65535) {
+    console.error(`\n  ❌ Invalid port: "${opts.port}". Port must be a number between 1 and 65535.\n`);
+    process.exit(1);
+  }
+
   return {
-    port: parseInt(opts.port, 10),
+    port,
     dir: opts.dir,
     open: opts.open !== false,
   };

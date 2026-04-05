@@ -127,6 +127,146 @@ function pushHistory(state: FlowState): Partial<FlowState> {
   };
 }
 
+/**
+ * Build the full set of nodes/edges for a test case view, including any
+ * beforeAll / beforeEach hook nodes before the test steps and afterEach /
+ * afterAll hook nodes after.  Each hook section is preceded by a label node.
+ */
+function testCaseWithHooks(
+  tc: TestCase,
+  flow: TestFlow,
+): { nodes: Node[]; edges: Edge[] } {
+  const sections: { hookName: string; actions: ActionNode[] }[] = [];
+  if (flow.beforeAll && flow.beforeAll.length > 0) sections.push({ hookName: 'beforeAll', actions: flow.beforeAll });
+  if (flow.beforeEach && flow.beforeEach.length > 0) sections.push({ hookName: 'beforeEach', actions: flow.beforeEach });
+
+  // Build result
+  const allNodes: Node[] = [];
+  const allEdges: Edge[] = [];
+  let yOffset = 0;
+  const X = 250;
+
+  function appendLabel(hookName: string) {
+    const id = `hookLabel_${hookName}_${Date.now()}`;
+    allNodes.push({
+      id,
+      type: 'hookLabel',
+      position: { x: X, y: yOffset },
+      data: { hookName } as unknown as Record<string, unknown>,
+    });
+    yOffset += 80;
+    return id;
+  }
+
+  function appendActions(actions: ActionNode[], isReadOnly: boolean) {
+    for (const n of actions) {
+      const nodeId = isReadOnly ? `hook_${n.id}` : n.id;
+      allNodes.push({
+        id: nodeId,
+        type: n.type,
+        position: { x: X, y: yOffset },
+        data: { ...n.data, ...(isReadOnly ? { _hookReadOnly: true } : {}) } as unknown as Record<string, unknown>,
+      });
+      yOffset += 150;
+    }
+  }
+
+  // Before hooks
+  for (const section of sections) {
+    const labelId = appendLabel(section.hookName);
+    const firstActionId = section.actions.length > 0 ? `hook_${section.actions[0].id}` : null;
+    if (firstActionId) {
+      allEdges.push({
+        id: `edge_${labelId}_${firstActionId}`,
+        source: labelId,
+        target: firstActionId,
+        style: { stroke: '#52525b', strokeWidth: 2 },
+      });
+    }
+    appendActions(section.actions, true);
+    // Chain hook action nodes
+    for (let i = 0; i < section.actions.length - 1; i++) {
+      const srcId = `hook_${section.actions[i].id}`;
+      const tgtId = `hook_${section.actions[i + 1].id}`;
+      allEdges.push({
+        id: `edge_${srcId}_${tgtId}`,
+        source: srcId,
+        target: tgtId,
+        style: { stroke: '#52525b', strokeWidth: 2 },
+      });
+    }
+    // Connect last hook node to next section's first node (will be linked below)
+  }
+
+  // Test case nodes
+  const testStartY = yOffset;
+  const tcResult = testCaseToNodesEdges(tc);
+  // Reposition test nodes relative to current yOffset
+  for (const n of tcResult.nodes) {
+    allNodes.push({
+      ...n,
+      position: { x: n.position.x, y: n.position.y + testStartY },
+    });
+  }
+  allEdges.push(...tcResult.edges);
+  if (tcResult.nodes.length > 0) {
+    yOffset = tcResult.nodes[tcResult.nodes.length - 1].position.y + testStartY + 150;
+  }
+
+  // Connect last before-hook node to first test node
+  if (allNodes.length > tcResult.nodes.length && tcResult.nodes.length > 0) {
+    const lastBeforeNode = allNodes[allNodes.length - tcResult.nodes.length - 1];
+    const firstTestNode = tcResult.nodes[0];
+    allEdges.push({
+      id: `edge_${lastBeforeNode.id}_${firstTestNode.id}`,
+      source: lastBeforeNode.id,
+      target: firstTestNode.id,
+      style: { stroke: '#52525b', strokeWidth: 2 },
+    });
+  }
+
+  // After hooks
+  const afterSections: { hookName: string; actions: ActionNode[] }[] = [];
+  if (flow.afterEach && flow.afterEach.length > 0) afterSections.push({ hookName: 'afterEach', actions: flow.afterEach });
+  if (flow.afterAll && flow.afterAll.length > 0) afterSections.push({ hookName: 'afterAll', actions: flow.afterAll });
+
+  for (const section of afterSections) {
+    // Connect previous last node to label
+    const prevLastNode = allNodes[allNodes.length - 1];
+    const labelId = appendLabel(section.hookName);
+    if (prevLastNode) {
+      allEdges.push({
+        id: `edge_${prevLastNode.id}_${labelId}`,
+        source: prevLastNode.id,
+        target: labelId,
+        style: { stroke: '#52525b', strokeWidth: 2 },
+      });
+    }
+    const firstActionId = section.actions.length > 0 ? `hook_${section.actions[0].id}` : null;
+    if (firstActionId) {
+      allEdges.push({
+        id: `edge_${labelId}_${firstActionId}`,
+        source: labelId,
+        target: firstActionId,
+        style: { stroke: '#52525b', strokeWidth: 2 },
+      });
+    }
+    appendActions(section.actions, true);
+    for (let i = 0; i < section.actions.length - 1; i++) {
+      const srcId = `hook_${section.actions[i].id}`;
+      const tgtId = `hook_${section.actions[i + 1].id}`;
+      allEdges.push({
+        id: `edge_${srcId}_${tgtId}`,
+        source: srcId,
+        target: tgtId,
+        style: { stroke: '#52525b', strokeWidth: 2 },
+      });
+    }
+  }
+
+  return { nodes: allNodes, edges: allEdges };
+}
+
 function hookNodesToNodesEdges(hookNodes: ActionNode[]): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = hookNodes.map((n, i) => ({
     id: n.id,
@@ -167,7 +307,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       set({ testFlow: flow, activeTestIndex: testIndex, activeView: 'test', nodes: [], edges: [], selectedNodeId: null, selectedNodeIds: new Set(), isDirty: false, history: [], historyIndex: -1, canUndo: false, canRedo: false });
       return;
     }
-    const { nodes, edges } = testCaseToNodesEdges(tc);
+    const hasHooks = (flow.beforeAll?.length ?? 0) > 0 || (flow.beforeEach?.length ?? 0) > 0 || (flow.afterEach?.length ?? 0) > 0 || (flow.afterAll?.length ?? 0) > 0;
+    const { nodes, edges } = hasHooks ? testCaseWithHooks(tc, flow) : testCaseToNodesEdges(tc);
     const entry: HistoryEntry = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) };
     set({ testFlow: flow, activeTestIndex: testIndex, activeView: 'test', nodes, edges, selectedNodeId: null, selectedNodeIds: new Set(), isDirty: false, history: [entry], historyIndex: 0, canUndo: false, canRedo: false });
   },
@@ -177,7 +318,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (!testFlow) return;
     const tc = testFlow.tests[index];
     if (!tc) return;
-    const { nodes, edges } = testCaseToNodesEdges(tc);
+    const hasHooks = (testFlow.beforeAll?.length ?? 0) > 0 || (testFlow.beforeEach?.length ?? 0) > 0 || (testFlow.afterEach?.length ?? 0) > 0 || (testFlow.afterAll?.length ?? 0) > 0;
+    const { nodes, edges } = hasHooks ? testCaseWithHooks(tc, testFlow) : testCaseToNodesEdges(tc);
     const entry: HistoryEntry = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) };
     set({ activeTestIndex: index, activeView: 'test', nodes, edges, selectedNodeId: null, selectedNodeIds: new Set(), history: [entry], historyIndex: 0, canUndo: false, canRedo: false });
   },
@@ -229,7 +371,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (view === 'test') {
       const tc = updatedFlow.tests[activeTestIndex];
       if (tc) {
-        const result = testCaseToNodesEdges(tc);
+        const hasHooks = (updatedFlow.beforeAll?.length ?? 0) > 0 || (updatedFlow.beforeEach?.length ?? 0) > 0 || (updatedFlow.afterEach?.length ?? 0) > 0 || (updatedFlow.afterAll?.length ?? 0) > 0;
+        const result = hasHooks ? testCaseWithHooks(tc, updatedFlow) : testCaseToNodesEdges(tc);
         newNodes = result.nodes;
         newEdges = result.edges;
       }

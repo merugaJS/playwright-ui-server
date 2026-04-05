@@ -325,6 +325,7 @@ export function MainContent() {
                 <div key={tc.id} className="group/tab relative flex items-center">
                   <button
                     onClick={() => { setActiveView('test'); setActiveTestIndex(i); }}
+                    title={tc.name}
                     className={`px-3 py-1.5 text-xs rounded-tl transition-colors truncate max-w-[180px] flex items-center gap-1 ${
                       i === activeTestIndex && activeView === 'test'
                         ? 'bg-zinc-800 text-zinc-200 border border-zinc-700 border-b-zinc-800 border-r-0'

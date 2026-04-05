@@ -1,4 +1,6 @@
+import fs from 'node:fs';
 import http from 'node:http';
+import path from 'node:path';
 import { parseCli } from './cli.js';
 import { scanProject } from './project-scanner.js';
 import { createApp } from './app.js';
@@ -7,6 +9,13 @@ import { startWatcher } from './watcher.js';
 
 async function main() {
   const options = parseCli(process.argv);
+
+  const resolvedDir = path.resolve(options.dir);
+  if (!fs.existsSync(resolvedDir)) {
+    console.error(`\n  ⚠️  Directory not found: ${resolvedDir}\n`);
+    process.exit(1);
+  }
+
   const projectInfo = scanProject(options.dir);
 
   console.log(`\n  🎭 Playwright UI Server v0.1.0\n`);
@@ -23,6 +32,16 @@ async function main() {
 
   // File watcher for external changes
   startWatcher(projectInfo);
+
+  // Catch EADDRINUSE from both HTTP and WebSocket servers
+  process.on('uncaughtException', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n  ❌ Port ${options.port} is already in use. Try a different port with: playwright-ui-server -p <port>\n`);
+      process.exit(1);
+    }
+    console.error('Unexpected error:', err);
+    process.exit(1);
+  });
 
   server.listen(options.port, () => {
     const url = `http://localhost:${options.port}`;
