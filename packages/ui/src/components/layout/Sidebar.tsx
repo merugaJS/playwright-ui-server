@@ -414,6 +414,7 @@ function PageObjectItem({
 }) {
   const [expanded, setExpanded] = useState(false);
   const { data: fullPO } = usePageObject(expanded ? po.id : null);
+  const navigateToPageObjectItem = useProjectStore((s) => s.navigateToPageObjectItem);
 
   return (
     <div>
@@ -444,10 +445,18 @@ function PageObjectItem({
             <div className="mb-1">
               <p className="text-zinc-500 text-[10px] uppercase tracking-wider py-0.5">Locators</p>
               {fullPO.locators.map((loc) => (
-                <div key={loc.name} className="text-xs text-zinc-400 py-0.5 pl-1 truncate">
-                  <span className="text-purple-400 font-mono">{loc.name}</span>
+                <button
+                  key={loc.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToPageObjectItem(po.id, { type: 'locator', name: loc.name });
+                  }}
+                  className="w-full text-left text-xs py-0.5 pl-1 truncate cursor-pointer hover:bg-zinc-800/60 rounded transition-colors group"
+                  title={`Go to locator: ${loc.name}`}
+                >
+                  <span className="text-purple-400 font-mono underline decoration-purple-400/30 group-hover:decoration-purple-400">{loc.name}</span>
                   <span className="text-zinc-600 ml-1">{loc.strategy}({loc.value})</span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -457,8 +466,16 @@ function PageObjectItem({
             <div>
               <p className="text-zinc-500 text-[10px] uppercase tracking-wider py-0.5">Methods</p>
               {fullPO.methods.map((m) => (
-                <div key={m.name} className="text-xs text-zinc-400 py-0.5 pl-1 truncate">
-                  <span className="text-blue-400 font-mono">{m.name}</span>
+                <button
+                  key={m.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateToPageObjectItem(po.id, { type: 'method', name: m.name });
+                  }}
+                  className="w-full text-left text-xs py-0.5 pl-1 truncate cursor-pointer hover:bg-zinc-800/60 rounded transition-colors group"
+                  title={`Go to method: ${m.name}`}
+                >
+                  <span className="text-blue-400 font-mono underline decoration-blue-400/30 group-hover:decoration-blue-400">{m.name}</span>
                   <span className="text-zinc-600">(</span>
                   {m.parameters.map((p, i) => (
                     <span key={p.name}>
@@ -469,7 +486,7 @@ function PageObjectItem({
                     </span>
                   ))}
                   <span className="text-zinc-600">)</span>
-                </div>
+                </button>
               ))}
             </div>
           )}

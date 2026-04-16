@@ -1,11 +1,28 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseCli } from './cli.js';
 import { scanProject } from './project-scanner.js';
 import { createApp } from './app.js';
 import { setupWebSocket } from './ws.js';
 import { startWatcher } from './watcher.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function getVersion(): string {
+  const candidates = [
+    path.resolve(__dirname, '../package.json'),
+    path.resolve(__dirname, '../../package.json'),
+    path.resolve(__dirname, '../../../package.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8')).version ?? '0.0.0';
+    } catch {}
+  }
+  return '0.0.0';
+}
 
 async function main() {
   const options = parseCli(process.argv);
@@ -18,7 +35,7 @@ async function main() {
 
   const projectInfo = scanProject(options.dir);
 
-  console.log(`\n  🎭 Playwright UI Server v0.1.0\n`);
+  console.log(`\n  🎭 Playwright UI Server v${getVersion()}\n`);
   console.log(`  Project: ${projectInfo.rootDir}`);
   console.log(`  Config:  ${projectInfo.configPath ?? 'not found (using defaults)'}`);
   console.log(`  Tests:   ${projectInfo.testFiles.length} file(s) discovered`);

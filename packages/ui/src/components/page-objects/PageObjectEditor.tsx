@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageObject } from '../../api/hooks.js';
 import { savePageObject, deletePageObject } from '../../api/mutations.js';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PageObject, PageObjectLocator, PageObjectMethod } from '../../api/hooks.js';
+import { useProjectStore } from '../../stores/projectStore.js';
 
 interface PageObjectEditorProps {
   pageObjectId: string;
@@ -32,6 +33,28 @@ export function PageObjectEditor({ pageObjectId, onClose, onDeleted }: PageObjec
   const isDirty = editState && pageObject
     ? JSON.stringify(editState) !== JSON.stringify(pageObject)
     : false;
+
+  // Scroll to a specific locator or method when navigated from sidebar
+  const scrollTarget = useProjectStore((s) => s.scrollTarget);
+  const clearScrollTarget = useProjectStore((s) => s.clearScrollTarget);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scrollTarget || !editState || !contentRef.current) return;
+    // Small delay to let the editor render fully
+    const timer = setTimeout(() => {
+      const attr = scrollTarget.type === 'locator' ? 'data-locator-name' : 'data-method-name';
+      const el = contentRef.current?.querySelector(`[${attr}="${CSS.escape(scrollTarget.name)}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Flash highlight
+        el.classList.add('ring-2', 'ring-blue-500/60');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-blue-500/60'), 1500);
+      }
+      clearScrollTarget();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [scrollTarget, editState, clearScrollTarget]);
 
   const handleSave = useCallback(async () => {
     if (!editState) return;
@@ -159,7 +182,7 @@ export function PageObjectEditor({ pageObjectId, onClose, onDeleted }: PageObjec
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div ref={contentRef} className="flex-1 overflow-y-auto p-6">
         {/* Class Name */}
         <div className="mb-6">
           <label className="text-zinc-500 text-xs uppercase tracking-wider block mb-1">Class Name</label>
@@ -190,7 +213,8 @@ export function PageObjectEditor({ pageObjectId, onClose, onDeleted }: PageObjec
             {editState.locators.map((loc, i) => (
               <div
                 key={i}
-                className="bg-zinc-900 border border-zinc-700 rounded-lg p-3"
+                data-locator-name={loc.name}
+                className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-zinc-400 text-xs font-mono">{loc.name}</span>
@@ -262,7 +286,8 @@ export function PageObjectEditor({ pageObjectId, onClose, onDeleted }: PageObjec
             {editState.methods.map((method, i) => (
               <div
                 key={i}
-                className="bg-zinc-900 border border-zinc-700 rounded-lg p-3"
+                data-method-name={method.name}
+                className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-zinc-400 text-xs font-mono">{method.name}()</span>
@@ -296,7 +321,7 @@ export function PageObjectEditor({ pageObjectId, onClose, onDeleted }: PageObjec
                         });
                         updateMethod(i, { parameters: params });
                       }}
-                      placeholder="email: string, password: string"
+                      placeholder="param: type, param2: type"
                       className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-300 text-xs font-mono focus:outline-none focus:border-blue-500"
                     />
                   </div>

@@ -54,6 +54,7 @@ const typeToCategory: Record<string, string> = {
   responseAssertion: 'assertion',
   browserStorage: 'utility',
   newContext: 'navigation',
+  hookLabel: 'utility',
 };
 
 /**
@@ -98,6 +99,7 @@ const typeToLabel: Record<string, string> = {
   responseAssertion: 'Response Assert',
   browserStorage: 'Browser Storage',
   newContext: 'New Context',
+  hookLabel: 'Hook',
 };
 
 interface CompactNodeProps {

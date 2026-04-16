@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { ProjectInfo } from './project-scanner.js';
 import { createConfigRouter } from './routes/config.js';
@@ -51,8 +51,24 @@ export function createApp(projectInfo: ProjectInfo): express.Express {
   app.use('/api/coverage', createCoverageRouter(projectInfo));
 
   // Health check endpoint
+  // Read version from root package.json (works in both dev and bundled mode)
+  let pkgVersion = '0.0.0';
+  try {
+    const pkgPaths = [
+      path.resolve(__dirname, '../package.json'),       // bundled: dist/ -> package.json
+      path.resolve(__dirname, '../../package.json'),     // bundled alt
+      path.resolve(__dirname, '../../../package.json'),  // dev: packages/server/dist -> root
+    ];
+    for (const p of pkgPaths) {
+      if (existsSync(p)) {
+        pkgVersion = JSON.parse(readFileSync(p, 'utf-8')).version ?? pkgVersion;
+        break;
+      }
+    }
+  } catch {}
+
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', version: '0.1.0' });
+    res.json({ status: 'ok', version: pkgVersion });
   });
 
   // Catch-all for unknown API routes

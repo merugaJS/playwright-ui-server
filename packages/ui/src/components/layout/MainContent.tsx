@@ -247,10 +247,10 @@ export function MainContent() {
       <div className="flex-1 flex flex-col bg-zinc-950">
         {/* Toolbar */}
         <div className="bg-zinc-900 border-b border-zinc-700 shrink-0">
-          <div className="flex items-center px-4 h-10">
-            <span className="text-zinc-400 text-sm">{selectedFile.filePath}</span>
+          <div className="flex items-center px-4 h-10 min-w-0">
+            <span className="text-zinc-400 text-sm truncate shrink min-w-0">{selectedFile.filePath}</span>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 shrink-0">
               {saveError && (
                 <span className="text-red-400 text-xs">{saveError}</span>
               )}
@@ -320,9 +320,9 @@ export function MainContent() {
 
           {/* Test case tabs with run buttons */}
           {storeTestFlow && storeTestFlow.tests.length > 0 && (
-            <div className="flex items-center px-2 gap-1 pb-1">
+            <div className="flex items-center px-2 gap-1 pb-1 overflow-x-auto scrollbar-thin">
               {storeTestFlow.tests.map((tc, i) => (
-                <div key={tc.id} className="group/tab relative flex items-center">
+                <div key={tc.id} className="group/tab relative flex items-center shrink-0">
                   <button
                     onClick={() => { setActiveView('test'); setActiveTestIndex(i); }}
                     title={tc.name}
@@ -470,7 +470,7 @@ export function MainContent() {
               )}
 
               {/* Separator before hook tabs */}
-              <span className="w-px h-5 bg-zinc-700 mx-1" />
+              <span className="w-px h-5 bg-zinc-700 mx-1 shrink-0" />
 
               {/* beforeAll tab */}
               <button

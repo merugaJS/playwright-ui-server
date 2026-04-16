@@ -25,8 +25,10 @@ import { COMPACT_ZOOM_THRESHOLD, MINIMAL_ZOOM_THRESHOLD, type LodMode } from '..
 /**
  * Performance-related flags for the React Flow canvas.
  * These are tuned for flows with 100-200+ nodes.
+ * minZoom floors the auto-fit zoom at the compact-LOD threshold so the initial
+ * render shows full-detail nodes instead of dropping into minimal/compact mode.
  */
-const PERF_FIT_VIEW_OPTIONS = { padding: 0.3 } as const;
+const PERF_FIT_VIEW_OPTIONS = { padding: 0.3, minZoom: 0.5 } as const;
 
 /**
  * Inner component that auto-fits the viewport whenever nodes are loaded or
@@ -46,10 +48,17 @@ function AutoFitView({ nodes }: { nodes: Node[] }) {
     if (nodeKey === prevNodeKeyRef.current) return;
     prevNodeKeyRef.current = nodeKey;
 
-    // Small delay lets React Flow finish measuring node dimensions.
+    // Two-stage fit: after a short delay (letting React Flow measure nodes),
+    // call fitView once without animation to lock the viewport, then again on
+    // the next frame with animation to smooth out any late layout changes.
+    // minZoom keeps the initial render above the compact-LOD threshold so
+    // wide flows don't render as tiny pills on first load.
     const timer = setTimeout(() => {
-      reactFlowInstance.fitView({ padding: 0.2, duration: 200 });
-    }, 50);
+      reactFlowInstance.fitView({ padding: 0.2, minZoom: 0.5, duration: 0 });
+      requestAnimationFrame(() => {
+        reactFlowInstance.fitView({ padding: 0.2, minZoom: 0.5, duration: 200 });
+      });
+    }, 100);
     return () => clearTimeout(timer);
   }, [nodes, reactFlowInstance]);
 
