@@ -244,7 +244,7 @@ export function MainContent() {
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      <div className="flex-1 flex flex-col bg-zinc-950">
+      <div className="flex-1 flex flex-col bg-zinc-950 min-w-0">
         {/* Toolbar */}
         <div className="bg-zinc-900 border-b border-zinc-700 shrink-0">
           <div className="flex items-center px-4 h-10 min-w-0">
