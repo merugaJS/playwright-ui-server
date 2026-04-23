@@ -26,6 +26,7 @@ playwright-report/
 # Dev-only files (not part of the npm package)
 backlog/
 *.png
+!docs/images/*.png
 tests/
 playwright.config.ts
 .mcp.json
